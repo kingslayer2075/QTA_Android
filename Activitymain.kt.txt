@@ -1,0 +1,83 @@
+package com.example.simuladorcredito 
+
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.widget.*
+import kotlin.math.pow
+
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val etValorPropiedad = findViewById<EditText>(R.id.et_valor_propiedad)
+        val etCuantoNecesitas = findViewById<EditText>(R.id.et_cuanto_necesitas)
+        val etPlazo = findViewById<EditText>(R.id.et_plazo)
+        val etTasa = findViewById<EditText>(R.id.et_tasa)
+        val btnSimular = findViewById<Button>(R.id.btn_simular)
+
+        btnSimular.setOnClickListener {
+
+            try {
+                // Obtener y validar los valores ingresados
+                val valorPropiedad = etValorPropiedad.text.toString().replace(".", "").toDoubleOrNull()
+                val cuantoNecesitas = etCuantoNecesitas.text.toString().replace(".", "").toDoubleOrNull()
+                val plazoAnios = etPlazo.text.toString().toIntOrNull()
+                val tasaAnual = etTasa.text.toString().toDoubleOrNull()
+
+                // Validaciones
+                if (valorPropiedad == null || valorPropiedad < 70000000) {
+                    showToast("El valor de la propiedad debe ser mínimo $70.000.000")
+                    return@setOnClickListener
+                }
+
+                if (cuantoNecesitas == null || cuantoNecesitas < 50000000) {
+                    showToast("El préstamo debe ser mínimo $50.000.000")
+                    return@setOnClickListener
+                }
+
+                // Límites según crédito hipotecario (70%) o leasing habitacional (80%)
+                val maxHipotecario = valorPropiedad * 0.70
+                val maxLeasing = valorPropiedad * 0.80
+
+                if (cuantoNecesitas > maxLeasing) {
+                    showToast("El préstamo no puede superar el 80% ($${formatNumber(maxLeasing)}) del valor de la propiedad.")
+                    return@setOnClickListener
+                }
+
+                if (plazoAnios == null || plazoAnios < 5 || plazoAnios > 20) {
+                    showToast("El plazo debe estar entre 5 y 20 años.")
+                    return@setOnClickListener
+                }
+
+                if (tasaAnual == null || tasaAnual < 12.0 || tasaAnual > 24.9) {
+                    showToast("La tasa debe estar entre 12.0% y 24.9%")
+                    return@setOnClickListener
+                }
+
+                // Variables para el cálculo
+                val vp = cuantoNecesitas
+                val n = plazoAnios * 12 // Plazo en meses
+                val i = (tasaAnual / 12) / 100 // Tasa mensual
+
+                // Cálculo de la cuota
+                val cuota = vp * ((i * (1 + i).pow(n)) / ((1 + i).pow(n) - 1))
+
+                // Mostrar resultado en un Toast
+                showToast("Tu cuota mensual es: $${formatNumber(cuota)}")
+
+            } catch (e: Exception) {
+                showToast("Error en los datos ingresados, por favor verifica.")
+            }
+        }
+    }
+
+    private fun showToast(mensaje: String) {
+        Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show()
+    }
+
+    private fun formatNumber(number: Double): String {
+        return String.format("%,.2f", number)
+    }
+}
